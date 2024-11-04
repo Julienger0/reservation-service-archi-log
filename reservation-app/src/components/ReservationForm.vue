@@ -5,6 +5,7 @@
       <div class="form-group">
         <label for="date">Date :</label>
         <input type="date" v-model="reservation.date" required />
+        <span v-if="dateError" class="error">{{ dateError }}</span>
       </div>
       <div class="form-group">
         <label for="heure">Heure :</label>
@@ -13,13 +14,14 @@
       <div class="form-group">
         <label for="nbPersonnes">Nombre de personnes :</label>
         <input type="number" v-model="reservation.nbPersonnes" required />
+        <span v-if="nbPersonnesError" class="error">{{ nbPersonnesError }}</span>
       </div>
       <div class="form-group">
         <label for="numeroCarte">Numéro Carte :</label>
         <input
           type="text"
           v-model="reservation.numeroCarte"
-          @input="validateCardNumber"
+          @input="validateForm"
           maxlength="16"
           required
           placeholder="Entrez 16 chiffres"
@@ -45,29 +47,49 @@ export default {
         numeroCarte: "",
       },
       cardError: "",
+      nbPersonnesError: "",
+      dateError: "",
       isFormValid: false,
     };
   },
   methods: {
-    validateCardNumber() {
+    validateForm() {
       const cardRegex = /^\d{16}$/;
+      const today = new Date().toISOString().split("T")[0]; // Current date in YYYY-MM-DD format
+
+      // Validate card number
       if (this.reservation.numeroCarte === "") {
         this.cardError = "";
         this.isFormValid = false;
       } else if (!cardRegex.test(this.reservation.numeroCarte)) {
-        this.cardError =
-          "Le numéro de carte doit contenir exactement 16 chiffres.";
+        this.cardError = "Le numéro de carte doit contenir exactement 16 chiffres.";
         this.isFormValid = false;
       } else {
         this.cardError = "";
-        this.isFormValid = true;
       }
+
+      // Validate number of persons
+      if (this.reservation.nbPersonnes > 8) {
+        this.nbPersonnesError = "Le nombre de personnes ne peut pas dépasser 8.";
+        this.isFormValid = false;
+      } else {
+        this.nbPersonnesError = "";
+      }
+
+      // Validate reservation date
+      if (this.reservation.date && this.reservation.date < today) {
+        this.dateError = "La date de réservation ne peut pas être dans le passé.";
+        this.isFormValid = false;
+      } else {
+        this.dateError = "";
+      }
+
+      // Set form validity based on all conditions
+      this.isFormValid = !this.cardError && !this.nbPersonnesError && !this.dateError;
     },
     async submitReservation() {
       if (!this.isFormValid) {
-        alert(
-          "Veuillez corriger les erreurs dans le formulaire avant de soumettre."
-        );
+        alert("Veuillez corriger les erreurs dans le formulaire avant de soumettre.");
         return;
       }
 
@@ -93,10 +115,10 @@ export default {
     },
   },
   watch: {
-    "reservation.date": "validateCardNumber",
-    "reservation.heure": "validateCardNumber",
-    "reservation.nbPersonnes": "validateCardNumber",
-    "reservation.numeroCarte": "validateCardNumber",
+    "reservation.date": "validateForm",
+    "reservation.heure": "validateForm",
+    "reservation.nbPersonnes": "validateForm",
+    "reservation.numeroCarte": "validateForm",
   },
 };
 </script>
